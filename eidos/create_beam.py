@@ -10,6 +10,8 @@ from spectral import *
 from spatial import *
 from parallelize import *
 import argparse
+import multiprocessing
+from tqdm.contrib.concurrent import process_map  # or thread_map
 
 def zernike_parameters(filename, npix=256, diameter=10, thr=20):
     C = np.load(filename, encoding='latin1', allow_pickle=True).item()
@@ -18,6 +20,7 @@ def zernike_parameters(filename, npix=256, diameter=10, thr=20):
     Npix = int(diameter_orig/(diameter/npix))
     params = [[Cr[:,i,:,:,:], C['zi'], Npix, thr] for i in range(Cr.shape[1])]
     return np.array(params, dtype=object), C['nu']
+
 
 def save_fits(data, nu, args, filename):
     # Save as fits files
@@ -34,8 +37,10 @@ def save_fits(data, nu, args, filename):
             write_fits(data.imag, nu, args.diameter, filename+'_im.fits')
             print("Saved Imaginary part as %s_im.fits"%filename)
 
+
 def main(argv):
-    parser=argparse.ArgumentParser(description='Create primary beam model of MeerKAT')
+    parser = argparse.ArgumentParser(description='Create primary beam model of MeerKAT')
+    parser.add_argument('--ncpu', type=int, default=0, help='Use N CPUS (can save memory)')
     parser.add_argument('-p', '--pixels', help='Number of pixels on one side', type=int, required=False)
     parser.add_argument('-d', '--diameter', help='Diameter of the required beam', type=float, required=False)
     parser.add_argument('-r', '--scale', help='Pixel scale in degrees', type=float, required=False)
@@ -92,12 +97,20 @@ def main(argv):
         ch = abs(freqs-nu).argmin()
         B = recon_par(params[ch,:])
     else:
+        # Do the multiprocessing.
+
         ch = [abs(freqs-i).argmin() for i in nu]
-        B = np.array(parmap(recon_par, params[ch,:]))
+
+        if args.ncpu > 1:
+            B = process_map(recon_par, params[ch,:], max_workers=args.ncpu)
+            B = np.array(B)
+        else:
+            B = np.array(parmap(recon_par, params[ch,:]))
 
     # Cut the beam to the specified diameter
 
-    if len(B.shape)==4: B = np.expand_dims(B, axis=0)
+    if len(B.shape) == 4:
+        B = np.expand_dims(B, axis=0)
     if args.diameter!=10:
         c, r = int(B.shape[-1]/2), int(args.pixels/2)
         if args.pixels%2==0: B = B[...,c-r:c+r,c-r:c+r]
