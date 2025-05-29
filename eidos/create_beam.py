@@ -13,7 +13,7 @@ from util import write_fits_eight, write_fits, jones_to_mueller_all
 from spectral import dct_recon_all
 from spatial import recon_par
 from parallelize import *
-
+import multiprocessing
 from tqdm.contrib.concurrent import process_map
 
 
@@ -108,11 +108,11 @@ def main(argv):
         # Do the multiprocessing.
         ch = [abs(freqs-i).argmin() for i in nu]
 
-        if args.ncpu > 1:
+        if args.ncpu > 0:
             B = process_map(recon_par, params[ch, :], max_workers=args.ncpu)
-            B = np.array(B)
         else:
-            B = np.array(parmap(recon_par, params[ch, :]))
+            B = process_map(recon_par, params[ch, :], max_workers=multiprocessing.cpu_count())
+        B = np.array(B)
 
     # Cut the beam to the specified diameter
 
