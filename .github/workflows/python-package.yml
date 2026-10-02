@@ -21,6 +21,22 @@ jobs:
           github.event:
           ${{ toJson(github.event) }}
           MESSAGE
+   lint:
+    needs: check_skip
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.14"
+    - name: Lint with ruff
+      run: |
+        python -m pip install --upgrade pip
+        pip install ruff
+        ruff check .
+        ruff format --check .
    test:
     needs: check_skip
     runs-on: ubuntu-latest
@@ -28,12 +44,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.10"]
+        python-version: ["3.10", "3.12", "3.14"]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
@@ -42,4 +58,8 @@ jobs:
         pip install .
     - name: Test
       run: |
-        eidos -d 0.5 -r 0.015625 -f 856 956 30 -P mk.holo.lband -o8 
+        eidos -d 0.5 -r 0.015625 -f 856 956 30 -P mk.holo.lband -o8
+    - name: Test Stokes output
+      run: |
+        eidos -d 0.5 -r 0.015625 -f 1070 -S I -P mk.holo.stokes
+        eidos -d 0.5 -r 0.015625 -f 1070 -S M -P mk.holo.mueller

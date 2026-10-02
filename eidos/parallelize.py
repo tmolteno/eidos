@@ -1,24 +1,7 @@
+"""Helpers for running eidos work across several processes."""
+
 import multiprocessing
-from multiprocessing import Lock
 
-def fun(f, q_in, q_out):
-    """
-    A helper function for the parmap function.
-
-    Parameters
-    ----------
-    f : function
-        Function to be evaluated using arguments in the queue q_in.
-    q_in : multiprocessing Queue object
-        A queue for the input arguments.
-    q_out : multiprocessing Queue object
-        A queue for the output of the function evaluation.
-    """
-    while True:
-        i, x = q_in.get()
-        if i is None:
-            break
-        q_out.put((i, f(x)))
 
 def parmap(f, X, proc_power=1):
     """
@@ -28,10 +11,16 @@ def parmap(f, X, proc_power=1):
     Parameters
     ----------
     f : function
-        Function onto which to map the input arguments in X.
+        Function onto which to map the input arguments in X. It has to be
+        importable at module level (i.e. picklable) so that the worker
+        processes can run it. Exceptions raised by f are re-raised in the
+        caller instead of silently stalling it.
     X : array_like
         The arguments to be fed to the function f. This can only handle a
         single argument for each evaluation of f.
+    proc_power : float
+        Fraction of the available CPUs to use. A value of 1 or more uses all
+        of them.
 
     Returns
     -------
@@ -39,23 +28,14 @@ def parmap(f, X, proc_power=1):
         A list of the outputs for each function evaluation corresponding to the
         input arguments in X.
     """
-    if proc_power<=1 and proc_power>0:
-        nprocs=int(proc_power*multiprocessing.cpu_count())
-    else:
-        nprocs = multiprocessing.cpu_count()
+    nprocs = multiprocessing.cpu_count()
+    if 0 < proc_power < 1:
+        # Never fall back to zero workers: an empty pool would deadlock.
+        nprocs = max(1, int(proc_power * nprocs))
 
-    q_in = multiprocessing.Queue(1)
-    q_out = multiprocessing.Queue()
+    items = list(X)
+    if not items:
+        return []
 
-    proc = [multiprocessing.Process(target=fun, args=(f, q_in, q_out)) for _ in range(nprocs)]
-    for p in proc:
-        p.daemon = True
-        p.start()
-
-    sent = [q_in.put((i, x)) for i, x in enumerate(X)]
-    [q_in.put((None, None)) for _ in range(nprocs)]
-    res = [q_out.get() for _ in range(len(sent))]
-
-    [p.join() for p in proc]
-
-    return [x for i, x in sorted(res)]
+    with multiprocessing.Pool(nprocs) as pool:
+        return pool.map(f, items)

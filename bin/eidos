@@ -1,6 +1,9 @@
 #!/usr/bin/env python
+"""Thin wrapper so the CLI can also be run straight from a source checkout."""
 
-from eidos import create_beam
 import sys
 
-create_beam.main(sys.argv[1:])
+from eidos import create_beam
+
+if __name__ == "__main__":
+    create_beam.main(sys.argv[1:])

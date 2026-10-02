@@ -6,7 +6,7 @@ Paper II: [Modelling the MeerKAT L-band beam](https://arxiv.org/abs/1904.07155)
 The current version can be used to create only MeerKAT L-band beams from both holographic (AH) observations and EM simulations within a maximum diameter of 10 degrees. L-band AH beam models for JVLA and the UHF-band models for MeerKAT will be added soon.  
 
 ## Dependencies
-scipy, numpy, astropy
+Python 3.10 or newer, scipy, numpy, astropy
 
 ## Installation
 `pip install eidos`
@@ -16,6 +16,14 @@ To create a local developer version:
 `pip install -e /local/path/to/eidos`  
 
 Help available via `eidos -h`
+
+## Development
+Linting and formatting are done with [ruff](https://docs.astral.sh/ruff/) (both run in CI):
+
+```
+ruff check .
+ruff format .
+```
 
 ## Creating beam models
 To create a primary beam Jones matrix of MeerKAT for any frequency of L-band run  

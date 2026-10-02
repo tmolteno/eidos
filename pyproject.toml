@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eidos"
+version = "1.1.2"
+description = "Modelling primary beams of radio telescope antennae"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "GPL-3.0-only"
+license-files = []
+authors = [{ name = "Khan M. B Asad", email = "khmbasad@gmail.com" }]
+dependencies = [
+    "numpy",
+    "scipy",
+    "astropy",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Astronomy",
+]
+
+[project.urls]
+Homepage = "https://github.com/ratt-ru/eidos"
+Repository = "https://github.com/ratt-ru/eidos"
+
+[project.scripts]
+eidos = "eidos.create_beam:cli"
+
+[tool.setuptools]
+packages = ["eidos"]
+# The coefficient files in eidos/data are shipped explicitly (below) rather than
+# through MANIFEST.in, so setuptools does not mistake the data directory for a
+# sub-package.
+include-package-data = false
+
+[tool.setuptools.package-data]
+eidos = ["data/*.npy"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+extend-exclude = ["build", "dist"]
+
+[tool.ruff.lint]
+select = [
+    "B",    # flake8-bugbear
+    "E4",   # pycodestyle imports
+    "E7",   # pycodestyle statement
+    "E9",   # pycodestyle runtime
+    "EXE",  # flake8-executable
+    "F",    # pyflakes
+    "I",    # isort
+    "RUF",  # ruff-specific
+    "UP",   # pyupgrade
+    "W",    # pycodestyle whitespace
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["eidos"]
