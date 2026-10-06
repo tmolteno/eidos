@@ -63,3 +63,7 @@ jobs:
       run: |
         eidos -d 0.5 -r 0.015625 -f 1070 -S I -P mk.holo.stokes
         eidos -d 0.5 -r 0.015625 -f 1070 -S M -P mk.holo.mueller
+    - name: Test FITS beam centre (CRPIX matches the reconstruction grid)
+      run: |
+        pip install pytest
+        python -m pytest -q tests
